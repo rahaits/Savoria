@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Savoria AI — Global Recipe Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#c9a84c;--gold2:#e8c97a;--dark:#0a0a0a;--dark2:#111;--dark3:#181818;--dark4:#222;--text:#f0ead8;--text2:#9a8f7a;--text3:#5a5248;--border:#2a2520}
+body{background:var(--dark);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+.topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.brand{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:700;color:var(--gold)}
+.brand sup{font-size:0.6rem;color:var(--text2);font-family:'Inter',sans-serif;font-weight:400;vertical-align:super;margin-left:2px}
+.lang-row{display:flex;align-items:center;gap:8px}
+#currentFlag{font-size:1.1rem}
+.lang-select{background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:20px;font-size:0.8rem;font-family:'Inter',sans-serif;cursor:pointer;outline:none}
+.lang-select:focus{border-color:var(--gold)}
+.hero-strip{background:var(--dark2);border-bottom:1px solid var(--border);padding:1.25rem 1.5rem 0}
+.hero-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;line-height:1.1;margin-bottom:4px}
+.hero-title span{color:var(--gold)}
+.hero-sub{font-size:0.82rem;color:var(--text2);margin-bottom:1rem}
+.country-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:1rem;scrollbar-width:none}
+.country-scroll::-webkit-scrollbar{display:none}
+.ctry-pill{flex-shrink:0;background:var(--dark3);border:1px solid var(--border);color:var(--text2);padding:6px 14px;border-radius:20px;font-size:0.78rem;cursor:pointer;white-space:nowrap;transition:all 0.15s;user-select:none}
+.ctry-pill:hover,.ctry-pill.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+.tab-row{display:flex;gap:4px;padding:0.7rem 1.5rem 0;background:var(--dark2);border-bottom:1px solid var(--border);overflow-x:auto;scrollbar-width:none}
+.tab-row::-webkit-scrollbar{display:none}
+.tab{background:transparent;border:none;color:var(--text2);padding:8px 14px;border-radius:8px 8px 0 0;font-size:0.8rem;cursor:pointer;font-family:'Inter',sans-serif;border-bottom:2px solid transparent;transition:all 0.15s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.container{max-width:900px;margin:0 auto}
+.panel{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)}
+.sec-label{font-size:0.68rem;letter-spacing:2.5px;text-transform:uppercase;color:var(--text3);margin-bottom:0.9rem;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.form-group{margin-bottom:0.85rem}
+.form-label{font-size:0.7rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:5px}
+.form-input,.form-select{width:100%;background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.88rem;outline:none;transition:border-color 0.15s;appearance:none;-webkit-appearance:none}
+.form-input:focus,.form-select:focus{border-color:var(--gold)}
+.form-input::placeholder{color:var(--text3)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+@media(max-width:500px){.form-row{grid-template-columns:1fr}}
+.gen-btn{width:100%;background:var(--gold);border:none;color:#0a0a0a;padding:13px;border-radius:12px;font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;cursor:pointer;transition:all 0.2s;margin-top:4px;letter-spacing:0.3px}
+.gen-btn:hover{background:var(--gold2);transform:translateY(-1px)}
+.gen-btn:active{transform:translateY(0)}
+.gen-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.result-panel{padding:1.25rem 1.5rem;display:none}
+.result-panel.show{display:block}
+.recipe-name{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:700;color:var(--gold);line-height:1.2;margin-bottom:10px}
+.meta-row{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:1.1rem}
+.meta-tag{background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);color:var(--gold);padding:3px 11px;border-radius:14px;font-size:0.73rem}
+.r-section{margin-bottom:1.1rem}
+.r-label{font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:0.6rem;display:flex;align-items:center;gap:8px}
+.r-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+@media(max-width:480px){.ing-grid{grid-template-columns:1fr}}
+.ing-item{font-size:0.83rem;color:#c5b89a;display:flex;align-items:center;gap:6px;padding:3px 0}
+.ing-dot{width:3px;height:3px;background:var(--gold);border-radius:50%;flex-shrink:0}
+.steps-list{display:flex;flex-direction:column;gap:10px}
+.step-row{display:flex;gap:10px;align-items:flex-start}
+.step-n{width:23px;height:23px;border-radius:50%;background:rgba(201,168,76,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:500;flex-shrink:0;margin-top:2px}
+.step-txt{font-size:0.84rem;color:#c5b89a;line-height:1.65}
+.chef-tip{background:rgba(201,168,76,0.05);border-left:2px solid var(--gold);padding:10px 14px;border-radius:0 8px 8px 0;font-size:0.83rem;color:#c5b89a;font-style:italic;margin-bottom:0.5rem}
+.nut-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:1rem}
+@media(max-width:400px){.nut-row{grid-template-columns:1fr 1fr}}
+.nut-card{background:var(--dark3);border-radius:9px;padding:8px;text-align:center}
+.nut-val{font-size:1rem;font-weight:500;color:var(--gold);display:block}
+.nut-key{font-size:0.64rem;color:var(--text3);display:block;margin-top:2px}
+.action-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:1rem}
+.act-btn{background:var(--dark3);border:1px solid var(--border);color:var(--text2);padding:9px;border-radius:10px;font-size:0.76rem;cursor:pointer;font-family:'Inter',sans-serif;text-align:center;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.act-btn:hover{border-color:var(--gold);color:var(--gold)}
+.act-btn.saved{border-color:var(--gold);color:var(--gold)}
+.video-section{margin-top:1.1rem;border-top:1px solid var(--border);padding-top:1.1rem}
+.video-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:0.6rem}
+@media(max-width:500px){.video-grid{grid-template-columns:1fr}}
+.video-card{background:var(--dark3);border:1px solid var(--border);border-radius:12px;overflow:hidden;cursor:pointer;transition:all 0.15s;text-decoration:none}
+.video-card:hover{border-color:var(--gold)}
+.video-thumb{width:100%;height:85px;background:var(--dark4);display:flex;align-items:center;justify-content:center;position:relative}
+.play-btn{width:38px;height:38px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:0.9rem}
+.vid-duration{position:absolute;bottom:5px;right:7px;background:rgba(10,10,10,0.9);color:var(--gold);font-size:0.65rem;padding:2px 5px;border-radius:4px;font-family:'Inter',sans-serif}
+.video-info{padding:8px 11px}
+.video-title{font-size:0.79rem;color:var(--text);font-weight:500;line-height:1.3;margin-bottom:3px}
+.video-channel{font-size:0.68rem;color:var(--text2)}
+.yt-dot{display:inline-block;width:8px;height:8px;background:#c0392b;border-radius:50%;margin-right:4px;vertical-align:middle}
+.comment-section{padding:1.25rem 1.5rem;border-top:1px solid var(--border)}
+.comment-name-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+@media(max-width:480px){.comment-name-row{grid-template-columns:1fr}}
+.comment-box{width:100%;background:var(--dark3);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:10px;font-family:'Inter',sans-serif;font-size:0.85rem;outline:none;resize:vertical;transition:border-color 0.15s;min-height:75px}
+.comment-box:focus{border-color:var(--gold)}
+.comment-box::placeholder{color:var(--text3)}
+.rating-row{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.stars{display:flex;gap:5px}
+.star{font-size:1.2rem;cursor:pointer;color:var(--text3);transition:color 0.1s;line-height:1;user-select:none}
+.star.on{color:var(--gold)}
+.post-btn{background:var(--gold);border:none;color:#0a0a0a;padding:8px 20px;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.82rem;font-weight:500;cursor:pointer;transition:background 0.15s}
+.post-btn:hover{background:var(--gold2)}
+.comments-list{display:flex;flex-direction:column;gap:11px;margin-top:1rem}
+.comment-item{background:var(--dark3);border:1px solid var(--border);border-radius:13px;padding:13px 15px}
+.cmt-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.cmt-left{display:flex;align-items:center;gap:9px}
+.avatar{width:32px;height:32px;border-radius:50%;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:500;color:var(--gold);flex-shrink:0}
+.cmt-author{font-size:0.83rem;font-weight:500;color:var(--text)}
+.cmt-meta{font-size:0.7rem;color:var(--text3)}
+.cmt-stars{color:var(--gold);font-size:0.78rem;letter-spacing:1px}
+.cmt-text{font-size:0.83rem;color:#c5b89a;line-height:1.6;margin-bottom:8px}
+.cmt-actions{display:flex;gap:14px}
+.cmt-btn{background:transparent;border:none;color:var(--text2);font-size:0.72rem;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px;padding:0;transition:color 0.15s}
+.cmt-btn:hover,.cmt-btn.liked{color:var(--gold)}
+.reply-box{margin-top:9px;display:none}
+.reply-row{display:flex;gap:7px}
+.reply-input{flex:1;background:var(--dark4);border:1px solid var(--border);color:var(--text);padding:7px 11px;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.79rem;outline:none}
+.reply-input:focus{border-color:var(--gold)}
+.reply-input::placeholder{color:var(--text3)}
+.reply-send{background:transparent;border:1px solid var(--border);color:var(--gold);padding:7px 12px;border-radius:8px;font-size:0.72rem;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:border-color 0.15s}
+.reply-send:hover{border-color:var(--gold);background:rgba(201,168,76,0.08)}
+.replies{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px}
+.reply-item{display:flex;gap:8px}
+.reply-avatar{width:24px;height:24px;border-radius:50%;background:rgba(201,168,76,0.1);display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:500;color:var(--gold);flex-shrink:0}
+.reply-author{font-size:0.76rem;font-weight:500;color:var(--text);margin-bottom:2px}
+.reply-time{font-size:0.65rem;color:var(--text3);font-weight:400;margin-left:5px}
+.reply-text{font-size:0.78rem;color:#c5b89a;line-height:1.5}
+.empty-msg{text-align:center;padding:2rem;color:var(--text3);font-size:0.84rem}
+.explore-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+.explore-card{background:var(--dark3);border:1px solid var(--border);border-radius:12px;padding:0.85rem 0.5rem;text-align:center;cursor:pointer;transition:all 0.15s;user-select:none}
+.explore-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.exp-flag{font-size:1.5rem;display:block;margin-bottom:5px}
+.exp-dish{font-size:0.79rem;font-weight:500;color:var(--text);display:block}
+.exp-country{font-size:0.67rem;color:var(--text2);margin-top:2px;display:block}
+.fav-item{background:var(--dark3);border:1px solid var(--border);border-radius:11px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.fav-name{font-size:0.88rem;color:var(--text);font-weight:500}
+.fav-sub{font-size:0.71rem;color:var(--text2);margin-top:2px}
+.fav-open{background:transparent;border:1px solid var(--border);color:var(--text2);padding:5px 10px;border-radius:8px;font-size:0.71rem;cursor:pointer;font-family:'Inter',sans-serif;transition:all 0.15s}
+.fav-open:hover{border-color:var(--gold);color:var(--gold)}
+.dots{display:flex;gap:7px;justify-content:center;padding:2rem}
+.dot{width:8px;height:8px;background:var(--gold);border-radius:50%;animation:bop 1.1s infinite}
+.dot:nth-child(2){animation-delay:.18s}
+.dot:nth-child(3){animation-delay:.36s}
+@keyframes bop{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-8px);opacity:1}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark2);border:1px solid var(--gold);color:var(--gold);padding:10px 22px;border-radius:10px;font-size:0.82rem;transition:transform 0.3s;z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+footer{text-align:center;padding:2rem 1rem;color:var(--text3);font-size:0.75rem;border-top:1px solid var(--border);margin-top:1rem}
+footer span{color:var(--gold)}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">Savoria <sup>AI</sup></div>
+  <div class="lang-row">
+    <span id="currentFlag">🌐</span>
+    <select class="lang-select" id="langSelect" onchange="changeLang()">
+      <option value="en">English</option>
+      <option value="ur">اردو</option>
+      <option value="ar">العربية</option>
+      <option value="hi">हिन्दी</option>
+      <option value="zh">中文</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="tr">Türkçe</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="pt">Português</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="ru">Русский</option>
+      <option value="bn">বাংলা</option>
+    </select>
+  </div>
+</div>
+
+<div class="hero-strip">
+  <div class="hero-title" id="heroTitle">Discover <span>World Cuisine</span></div>
+  <div class="hero-sub" id="heroSub">AI-powered recipes · videos · community — 20 countries, 15 languages</div>
+  <div class="country-scroll">
+    <div class="ctry-pill active" onclick="setCountry('Pakistan',this)">🇵🇰 Pakistan</div>
+    <div class="ctry-pill" onclick="setCountry('India',this)">🇮🇳 India</div>
+    <div class="ctry-pill" onclick="setCountry('Japan',this)">🇯🇵 Japan</div>
+    <div class="ctry-pill" onclick="setCountry('Italy',this)">🇮🇹 Italy</div>
+    <div class="ctry-pill" onclick="setCountry('Mexico',this)">🇲🇽 Mexico</div>
+    <div class="ctry-pill" onclick="setCountry('China',this)">🇨🇳 China</div>
+    <div class="ctry-pill" onclick="setCountry('Turkey',this)">🇹🇷 Turkey</div>
+    <div class="ctry-pill" onclick="setCountry('France',this)">🇫🇷 France</div>
+    <div class="ctry-pill" onclick="setCountry('Thailand',this)">🇹🇭 Thailand</div>
+    <div class="ctry-pill" onclick="setCountry('Morocco',this)">🇲🇦 Morocco</div>
+    <div class="ctry-pill" onclick="setCountry('Korea',this)">🇰🇷 Korea</div>
+    <div class="ctry-pill" onclick="setCountry('Greece',this)">🇬🇷 Greece</div>
+    <div class="ctry-pill" onclick="setCountry('Brazil',this)">🇧🇷 Brazil</div>
+    <div class="ctry-pill" onclick="setCountry('Lebanon',this)">🇱🇧 Lebanon</div>
+    <div class="ctry-pill" onclick="setCountry('Ethiopia',this)">🇪🇹 Ethiopia</div>
+    <div class="ctry-pill" onclick="setCountry('Peru',this)">🇵🇪 Peru</div>
+    <div class="ctry-pill" onclick="setCountry('Spain',this)">🇪🇸 Spain</div>
+    <div class="ctry-pill" onclick="setCountry('Vietnam',this)">🇻🇳 Vietnam</div>
+    <div class="ctry-pill" onclick="setCountry('Egypt',this)">🇪🇬 Egypt</div>
+    <div class="ctry-pill" onclick="setCountry('Nigeria',this)">🇳🇬 Nigeria</div>
+  </div>
+</div>
+
+<div class="tab-row">
+  <button class="tab active" onclick="switchTab('generator',this)" id="tab-generator">Recipe Generator</button>
+  <button class="tab" onclick="switchTab('explore',this)" id="tab-explore">Explore World</button>
+  <button class="tab" onclick="switchTab('favorites',this)" id="tab-favorites">Saved Recipes</button>
+</div>
+
+<div class="container">
+
+<!-- GENERATOR TAB -->
+<div id="sec-generator">
+  <div class="panel">
+    <div class="sec-label" id="labelGen">Generate Recipe</div>
+    <div class="form-group">
+      <label class="form-label" id="labelDish">Dish Name</label>
+      <input class="form-input" id="dishInput" placeholder="e.g. Biryani, Pasta, Sushi, Tagine..."/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="labelServ">Servings</label>
+        <select class="form-select" id="servings">
+          <option>2</option><option selected>4</option><option>6</option><option>8</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="labelSpice">Spice Level</label>
+        <select class="form-select" id="spice">
+          <option>Mild</option><option selected>Medium</option><option>Hot</option><option>Extra Hot</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label" id="labelDiet">Diet</label>
+        <select class="form-select" id="diet">
+          <option>Any</option><option>Vegetarian</option><option>Vegan</option><option>Halal</option><option>Gluten-Free</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="labelTime">Cook Time</label>
+        <select class="form-select" id="cooktime">
+          <option>Under 30 min</option><option selected>30–60 min</option><option>1–2 hours</option><option>2+ hours</option>
+        </select>
+      </div>
+    </div>
+    <button class="gen-btn" id="genBtn" onclick="generateRecipe()">
+      <span id="genBtnTxt">Generate Recipe ✦</span>
+    </button>
+  </div>
+
+  <div class="result-panel" id="resultPanel">
+    <div id="resultContent"></div>
+    <div id="videoSection" style="display:none;margin-top:1.1rem;border-top:1px solid var(--border);padding-top:1.1rem">
+      <div class="r-label" id="videoLabel">Related Videos</div>
+      <div class="video-grid" id="videoGrid"></div>
+    </div>
+    <div class="action-row" id="actionRow" style="display:none">
+      <button class="act-btn" id="saveBtn" onclick="saveRecipe()">&#9825; <span id="saveTxt">Save</span></button>
+      <button class="act-btn" onclick="shareRecipe()">&#8679; <span id="shareTxt">Share</span></button>
+      <button class="act-btn" onclick="document.getElementById('commentSection').scrollIntoView({behavior:'smooth'})">&#9997; <span id="cmtBtnTxt">Comment</span></button>
+    </div>
+  </div>
+
+  <div class="comment-section" id="commentSection" style="display:none">
+    <div class="sec-label" id="commentLabel">Community Comments</div>
+    <div class="comment-name-row">
+      <input class="form-input" id="cmtName" placeholder="Your name..."/>
+      <input class="form-input" id="cmtCountry" placeholder="Your country..."/>
+    </div>
+    <textarea class="comment-box" id="cmtText" placeholder="Share your experience with this recipe..."></textarea>
+    <div class="rating-row">
+      <div class="stars" id="stars">
+        <span class="star" onclick="setRating(1)">&#9733;</span>
+        <span class="star" onclick="setRating(2)">&#9733;</span>
+        <span class="star" onclick="setRating(3)">&#9733;</span>
+        <span class="star" onclick="setRating(4)">&#9733;</span>
+        <span class="star" onclick="setRating(5)">&#9733;</span>
+      </div>
+      <button class="post-btn" id="postBtnEl" onclick="submitComment()">Post Comment</button>
+    </div>
+    <div id="commentsList"></div>
+  </div>
+</div>
+
+<!-- EXPLORE TAB -->
+<div id="sec-explore" style="display:none">
+  <div class="panel">
+    <div class="sec-label" id="labelExplore">Popular Dishes by Country</div>
+    <div class="explore-grid">
+      <div class="explore-card" onclick="quickGen('Biryani','Pakistan')"><span class="exp-flag">🇵🇰</span><span class="exp-dish">Biryani</span><span class="exp-country">Pakistan</span></div>
+      <div class="explore-card" onclick="quickGen('Nihari','Pakistan')"><span class="exp-flag">🇵🇰</span><span class="exp-dish">Nihari</span><span class="exp-country">Pakistan</span></div>
+      <div class="explore-card" onclick="quickGen('Butter Chicken','India')"><span class="exp-flag">🇮🇳</span><span class="exp-dish">Butter Chicken</span><span class="exp-country">India</span></div>
+      <div class="explore-card" onclick="quickGen('Dosa','India')"><span class="exp-flag">🇮🇳</span><span class="exp-dish">Dosa</span><span class="exp-country">India</span></div>
+      <div class="explore-card" onclick="quickGen('Sushi','Japan')"><span class="exp-flag">🇯🇵</span><span class="exp-dish">Sushi</span><span class="exp-country">Japan</span></div>
+      <div class="explore-card" onclick="quickGen('Ramen','Japan')"><span class="exp-flag">🇯🇵</span><span class="exp-dish">Ramen</span><span class="exp-country">Japan</span></div>
+      <div class="explore-card" onclick="quickGen('Carbonara','Italy')"><span class="exp-flag">🇮🇹</span><span class="exp-dish">Carbonara</span><span class="exp-country">Italy</span></div>
+      <div class="explore-card" onclick="quickGen('Pizza Napoletana','Italy')"><span class="exp-flag">🇮🇹</span><span class="exp-dish">Pizza</span><span class="exp-country">Italy</span></div>
+      <div class="explore-card" onclick="quickGen('Tacos al Pastor','Mexico')"><span class="exp-flag">🇲🇽</span><span class="exp-dish">Tacos</span><span class="exp-country">Mexico</span></div>
+      <div class="explore-card" onclick="quickGen('Peking Duck','China')"><span class="exp-flag">🇨🇳</span><span class="exp-dish">Peking Duck</span><span class="exp-country">China</span></div>
+      <div class="explore-card" onclick="quickGen('Dim Sum','China')"><span class="exp-flag">🇨🇳</span><span class="exp-dish">Dim Sum</span><span class="exp-country">China</span></div>
+      <div class="explore-card" onclick="quickGen('Iskender Kebab','Turkey')"><span class="exp-flag">🇹🇷</span><span class="exp-dish">Kebab</span><span class="exp-country">Turkey</span></div>
+      <div class="explore-card" onclick="quickGen('Coq au Vin','France')"><span class="exp-flag">🇫🇷</span><span class="exp-dish">Coq au Vin</span><span class="exp-country">France</span></div>
+      <div class="explore-card" onclick="quickGen('Pad Thai','Thailand')"><span class="exp-flag">🇹🇭</span><span class="exp-dish">Pad Thai</span><span class="exp-country">Thailand</span></div>
+      <div class="explore-card" onclick="quickGen('Tagine','Morocco')"><span class="exp-flag">🇲🇦</span><span class="exp-dish">Tagine</span><span class="exp-country">Morocco</span></div>
+      <div class="explore-card" onclick="quickGen('Bibimbap','Korea')"><span class="exp-flag">🇰🇷</span><span class="exp-dish">Bibimbap</span><span class="exp-country">Korea</span></div>
+      <div class="explore-card" onclick="quickGen('Moussaka','Greece')"><span class="exp-flag">🇬🇷</span><span class="exp-dish">Moussaka</span><span class="exp-country">Greece</span></div>
+      <div class="explore-card" onclick="quickGen('Feijoada','Brazil')"><span class="exp-flag">🇧🇷</span><span class="exp-dish">Feijoada</span><span class="exp-country">Brazil</span></div>
+      <div class="explore-card" onclick="quickGen('Hummus','Lebanon')"><span class="exp-flag">🇱🇧</span><span class="exp-dish">Hummus</span><span class="exp-country">Lebanon</span></div>
+      <div class="explore-card" onclick="quickGen('Injera Doro Wat','Ethiopia')"><span class="exp-flag">🇪🇹</span><span class="exp-dish">Doro Wat</span><span class="exp-country">Ethiopia</span></div>
+      <div class="explore-card" onclick="quickGen('Lomo Saltado','Peru')"><span class="exp-flag">🇵🇪</span><span class="exp-dish">Lomo Saltado</span><span class="exp-country">Peru</span></div>
+      <div class="explore-card" onclick="quickGen('Paella','Spain')"><span class="exp-flag">🇪🇸</span><span class="exp-dish">Paella</span><span class="exp-country">Spain</span></div>
+      <div class="explore-card" onclick="quickGen('Pho','Vietnam')"><span class="exp-flag">🇻🇳</span><span class="exp-dish">Pho</span><span class="exp-country">Vietnam</span></div>
+      <div class="explore-card" onclick="quickGen('Koshari','Egypt')"><span class="exp-flag">🇪🇬</span><span class="exp-dish">Koshari</span><span class="exp-country">Egypt</span></div>
+      <div class="explore-card" onclick="quickGen('Jollof Rice','Nigeria')"><span class="exp-flag">🇳🇬</span><span class="exp-dish">Jollof Rice</span><span class="exp-country">Nigeria</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAVORITES TAB -->
+<div id="sec-favorites" style="display:none">
+  <div class="panel">
+    <div class="sec-label" id="labelSaved">Saved Recipes</div>
+    <div id="favList"><div class="empty-msg">No saved recipes yet. Generate one!</div></div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<footer>
+  Made with <span>&#9829;</span> by Savoria AI &mdash; Powered by Claude AI &mdash; Global Recipes in Every Language
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LT={
+  en:{hero:'Discover <span style="color:var(--gold)">World Cuisine</span>',sub:'AI-powered recipes · videos · community — 20 countries, 15 languages',gen:'Generate Recipe',dish:'Dish Name',serv:'Servings',spice:'Spice Level',diet:'Diet',time:'Cook Time',explore:'Popular Dishes by Country',saved:'Saved Recipes',genBtn:'Generate Recipe ✦',save:'Save',share:'Share',cmt:'Comment',postBtn:'Post Comment',ing:'Ingredients',steps:'Instructions',tip:"Chef's Tip",nut:'Nutrition (per serving)',videos:'Related Videos',cmtSec:'Community Comments',noFav:'No saved recipes yet.',flag:'🌍'},
+  ur:{hero:'<span style="color:var(--gold)">عالمی کھانے</span> دریافت کریں',sub:'AI ترکیبیں · ویڈیوز · کمیونٹی',gen:'ترکیب بنائیں',dish:'ڈش کا نام',serv:'اسروونگ',spice:'مصالحے کی سطح',diet:'غذا',time:'پکانے کا وقت',explore:'ملک کے مشہور کھانے',saved:'محفوظ ترکیبیں',genBtn:'ترکیب بنائیں ✦',save:'محفوظ',share:'شیئر',cmt:'تبصرہ',postBtn:'تبصرہ بھیجیں',ing:'اجزاء',steps:'ہدایات',tip:'شیف کا مشورہ',nut:'غذائیت',videos:'متعلقہ ویڈیوز',cmtSec:'کمیونٹی تبصرے',noFav:'ابھی کچھ نہیں۔',flag:'🇵🇰'},
+  hi:{hero:'<span style="color:var(--gold)">विश्व व्यंजन</span> खोजें',sub:'AI रेसिपी · वीडियो · समुदाय',gen:'रेसिपी बनाएं',dish:'डिश का नाम',serv:'सर्विंग',spice:'मसाला',diet:'आहार',time:'समय',explore:'देश के प्रसिद्ध व्यंजन',saved:'सहेजी गई',genBtn:'रेसिपी बनाएं ✦',save:'सहेजें',share:'शेयर',cmt:'टिप्पणी',postBtn:'पोस्ट करें',ing:'सामग्री',steps:'विधि',tip:'शेफ टिप',nut:'पोषण',videos:'संबंधित वीडियो',cmtSec:'समुदाय टिप्पणियाँ',noFav:'कोई रेसिपी नहीं।',flag:'🇮🇳'},
+  ar:{hero:'اكتشف <span style="color:var(--gold)">المطبخ العالمي</span>',sub:'وصفات AI · فيديوهات · مجتمع',gen:'توليد وصفة',dish:'اسم الطبق',serv:'الحصص',spice:'التوابل',diet:'نظام غذائي',time:'وقت الطهي',explore:'أشهر الأطباق',saved:'محفوظ',genBtn:'توليد الوصفة ✦',save:'حفظ',share:'مشاركة',cmt:'تعليق',postBtn:'إرسال',ing:'المكونات',steps:'الطريقة',tip:'نصيحة الشيف',nut:'التغذية',videos:'فيديوهات',cmtSec:'تعليقات',noFav:'لا توجد وصفات.',flag:'🌍'},
+  zh:{hero:'探索<span style="color:var(--gold)">世界美食</span>',sub:'AI食谱 · 视频 · 社区',gen:'生成食谱',dish:'菜名',serv:'份数',spice:'辣度',diet:'饮食',time:'时间',explore:'各国特色菜',saved:'已保存',genBtn:'生成食谱 ✦',save:'保存',share:'分享',cmt:'评论',postBtn:'发布',ing:'食材',steps:'步骤',tip:'厨师建议',nut:'营养',videos:'相关视频',cmtSec:'社区评论',noFav:'暂无。',flag:'🇨🇳'},
+  es:{hero:'Descubre la <span style="color:var(--gold)">Cocina Mundial</span>',sub:'Recetas AI · videos · comunidad',gen:'Generar Receta',dish:'Nombre del Plato',serv:'Porciones',spice:'Picante',diet:'Dieta',time:'Tiempo',explore:'Platos por País',saved:'Guardados',genBtn:'Generar Receta ✦',save:'Guardar',share:'Compartir',cmt:'Comentar',postBtn:'Publicar',ing:'Ingredientes',steps:'Instrucciones',tip:'Consejo',nut:'Nutrición',videos:'Videos',cmtSec:'Comentarios',noFav:'Sin recetas.',flag:'🌍'},
+  fr:{hero:'Découvrez la <span style="color:var(--gold)">Cuisine Mondiale</span>',sub:'Recettes IA · vidéos · communauté',gen:'Générer',dish:'Nom du Plat',serv:'Portions',spice:'Épice',diet:'Régime',time:'Temps',explore:'Plats par Pays',saved:'Sauvegardés',genBtn:'Générer ✦',save:'Sauvegarder',share:'Partager',cmt:'Commenter',postBtn:'Publier',ing:'Ingrédients',steps:'Instructions',tip:'Conseil',nut:'Nutrition',videos:'Vidéos',cmtSec:'Commentaires',noFav:'Aucune recette.',flag:'🇫🇷'},
+  tr:{hero:'<span style="color:var(--gold)">Dünya Mutfağını</span> Keşfet',sub:'AI tarifleri · videolar · topluluk',gen:'Tarif Oluştur',dish:'Yemek Adı',serv:'Porsiyon',spice:'Baharat',diet:'Diyet',time:'Süre',explore:'Ülke Yemekleri',saved:'Kaydedilenler',genBtn:'Tarif Oluştur ✦',save:'Kaydet',share:'Paylaş',cmt:'Yorum',postBtn:'Gönder',ing:'Malzemeler',steps:'Yapılış',tip:'Öneri',nut:'Beslenme',videos:'Videolar',cmtSec:'Yorumlar',noFav:'Tarif yok.',flag:'🇹🇷'},
+  ja:{hero:'<span style="color:var(--gold)">世界の料理</span>を発見',sub:'AIレシピ · 動画 · コミュニティ',gen:'レシピ生成',dish:'料理名',serv:'人数',spice:'辛さ',diet:'制限',time:'時間',explore:'国別人気料理',saved:'保存済み',genBtn:'レシピを生成 ✦',save:'保存',share:'シェア',cmt:'コメント',postBtn:'投稿',ing:'材料',steps:'作り方',tip:'コツ',nut:'栄養',videos:'動画',cmtSec:'コメント',noFav:'保存なし',flag:'🇯🇵'},
+  ko:{hero:'<span style="color:var(--gold)">세계 요리</span> 탐험',sub:'AI 레시피 · 영상 · 커뮤니티',gen:'레시피 생성',dish:'요리 이름',serv:'인분',spice:'매운 정도',diet:'식단',time:'조리 시간',explore:'국가별 요리',saved:'저장됨',genBtn:'레시피 생성 ✦',save:'저장',share:'공유',cmt:'댓글',postBtn:'게시',ing:'재료',steps:'조리법',tip:'팁',nut:'영양',videos:'영상',cmtSec:'댓글',noFav:'없음',flag:'🇰🇷'},
+  pt:{hero:'Descubra a <span style="color:var(--gold)">Culinária Mundial</span>',sub:'Receitas AI · vídeos · comunidade',gen:'Gerar Receita',dish:'Nome do Prato',serv:'Porções',spice:'Picância',diet:'Dieta',time:'Tempo',explore:'Pratos por País',saved:'Salvos',genBtn:'Gerar Receita ✦',save:'Salvar',share:'Compartilhar',cmt:'Comentar',postBtn:'Publicar',ing:'Ingredientes',steps:'Instruções',tip:'Dica',nut:'Nutrição',videos:'Vídeos',cmtSec:'Comentários',noFav:'Nenhuma.',flag:'🌍'},
+  de:{hero:'<span style="color:var(--gold)">Weltküche</span> entdecken',sub:'KI-Rezepte · Videos · Community',gen:'Rezept erstellen',dish:'Gericht',serv:'Portionen',spice:'Schärfe',diet:'Ernährung',time:'Kochzeit',explore:'Gerichte nach Land',saved:'Gespeichert',genBtn:'Rezept erstellen ✦',save:'Speichern',share:'Teilen',cmt:'Kommentar',postBtn:'Senden',ing:'Zutaten',steps:'Zubereitung',tip:'Tipp',nut:'Nährwerte',videos:'Videos',cmtSec:'Kommentare',noFav:'Keine gespeichert.',flag:'🌍'},
+  it:{hero:'Scopri la <span style="color:var(--gold)">Cucina Mondiale</span>',sub:'Ricette AI · video · comunità',gen:'Genera Ricetta',dish:'Nome Piatto',serv:'Porzioni',spice:'Piccante',diet:'Dieta',time:'Tempo',explore:'Piatti per Paese',saved:'Salvati',genBtn:'Genera Ricetta ✦',save:'Salva',share:'Condividi',cmt:'Commenta',postBtn:'Pubblica',ing:'Ingredienti',steps:'Procedimento',tip:'Consiglio',nut:'Nutrizione',videos:'Video',cmtSec:'Commenti',noFav:'Nessuna.',flag:'🇮🇹'},
+  ru:{hero:'Откройте <span style="color:var(--gold)">мировую кухню</span>',sub:'ИИ рецепты · видео · сообщество',gen:'Создать рецепт',dish:'Название',serv:'Порции',spice:'Острота',diet:'Диета',time:'Время',explore:'Блюда по странам',saved:'Сохранённые',genBtn:'Создать рецепт ✦',save:'Сохранить',share:'Поделиться',cmt:'Комментарий',postBtn:'Отправить',ing:'Ингредиенты',steps:'Приготовление',tip:'Совет',nut:'Питательность',videos:'Видео',cmtSec:'Комментарии',noFav:'Нет.',flag:'🌍'},
+  bn:{hero:'<span style="color:var(--gold)">বিশ্ব রান্না</span> আবিষ্কার করুন',sub:'AI রেসিপি · ভিডিও · কমিউনিটি',gen:'রেসিপি তৈরি',dish:'ডিশের নাম',serv:'পরিবেশন',spice:'মশলা',diet:'খাদ্যাভ্যাস',time:'সময়',explore:'দেশের জনপ্রিয় খাবার',saved:'সংরক্ষিত',genBtn:'রেসিপি তৈরি করুন ✦',save:'সংরক্ষণ',share:'শেয়ার',cmt:'মন্তব্য',postBtn:'পোস্ট করুন',ing:'উপকরণ',steps:'প্রণালী',tip:'শেফের পরামর্শ',nut:'পুষ্টিগুণ',videos:'ভিডিও',cmtSec:'কমিউনিটি মন্তব্য',noFav:'কিছু নেই।',flag:'🌍'}
+};
+
+let lang='en', country='Pakistan', favorites=[], comments={}, userRating=0, lastRecipe=null;
+
+function t(k){return(LT[lang]&&LT[lang][k])||LT.en[k]||k}
+
+function applyLang(){
+  const flags={en:'🌍',ur:'🇵🇰',hi:'🇮🇳',ar:'🌍',zh:'🇨🇳',es:'🌍',fr:'🇫🇷',tr:'🇹🇷',ja:'🇯🇵',ko:'🇰🇷',pt:'🌍',de:'🌍',it:'🇮🇹',ru:'🌍',bn:'🌍'};
+  document.getElementById('currentFlag').textContent=flags[lang]||'🌍';
+  document.getElementById('heroTitle').innerHTML=t('hero');
+  document.getElementById('heroSub').textContent=t('sub');
+  document.getElementById('genBtnTxt').textContent=t('genBtn');
+  document.getElementById('labelDish').textContent=t('dish');
+  document.getElementById('labelServ').textContent=t('serv');
+  document.getElementById('labelSpice').textContent=t('spice');
+  document.getElementById('labelDiet').textContent=t('diet');
+  document.getElementById('labelTime').textContent=t('time');
+  document.getElementById('saveTxt').textContent=t('save');
+  document.getElementById('shareTxt').textContent=t('share');
+  document.getElementById('cmtBtnTxt').textContent=t('cmt');
+  document.getElementById('postBtnEl').textContent=t('postBtn');
+  setSecLabel('labelGen',t('gen'));
+  setSecLabel('labelExplore',t('explore'));
+  setSecLabel('labelSaved',t('saved'));
+  setSecLabel('commentLabel',t('cmtSec'));
+  setSecLabel('videoLabel',t('videos'));
+  document.getElementById('tab-generator').textContent=t('gen');
+  document.getElementById('tab-explore').textContent=t('explore');
+  document.getElementById('tab-favorites').textContent=t('saved');
+  renderFavorites();
+}
+
+function setSecLabel(id,txt){const el=document.getElementById(id);if(el)el.innerHTML=txt+'<span style="flex:1;height:1px;background:var(--border);display:inline-block;margin-left:8px;vertical-align:middle"></span>';}
+
+function changeLang(){lang=document.getElementById('langSelect').value;applyLang();}
+function setCountry(name,el){country=name;document.querySelectorAll('.ctry-pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');}
+function switchTab(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  ['generator','explore','favorites'].forEach(n=>{
+    const el=document.getElementById('sec-'+n);
+    if(el)el.style.display=n===name?'block':'none';
+  });
+  if(name==='favorites')renderFavorites();
+}
+function setRating(n){userRating=n;document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));}
+
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+async function generateRecipe(){
+  const dish=document.getElementById('dishInput').value.trim();
+  if(!dish){document.getElementById('dishInput').focus();return;}
+  const servings=document.getElementById('servings').value;
+  const spice=document.getElementById('spice').value;
+  const diet=document.getElementById('diet').value;
+  const cooktime=document.getElementById('cooktime').value;
+  const btn=document.getElementById('genBtn');
+  btn.disabled=true;
+  document.getElementById('genBtnTxt').textContent='...';
+  const panel=document.getElementById('resultPanel');
+  panel.classList.add('show');
+  document.getElementById('resultContent').innerHTML='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  document.getElementById('videoSection').style.display='none';
+  document.getElementById('actionRow').style.display='none';
+  document.getElementById('commentSection').style.display='none';
+  const langNames={en:'English',ur:'Urdu',hi:'Hindi',ar:'Arabic',zh:'Chinese Simplified',es:'Spanish',fr:'French',tr:'Turkish',ja:'Japanese',ko:'Korean',pt:'Portuguese',de:'German',it:'Italian',ru:'Russian',bn:'Bengali'};
+  const rl=langNames[lang]||'English';
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:`You are a world-class culinary expert. Generate a detailed recipe for "${dish}" from ${country} cuisine. Preferences: ${servings} servings, ${spice} spice level, ${diet} diet, ${cooktime} cook time. Respond entirely in ${rl}. Return ONLY valid JSON, no markdown:\n{"name":"...","origin":"...","time":"...","difficulty":"...","calories":"...","protein":"...","carbs":"...","fat":"...","ingredients":["..."],"steps":["..."],"tip":"...","ytQuery":"${dish} ${country} authentic recipe"}\n8-12 ingredients, 5-7 steps. All text in ${rl}.`}]})});
+    const data=await res.json();
+    const raw=data.content.map(i=>i.text||'').join('');
+    const r=JSON.parse(raw.replace(/```json|```/g,'').trim());
+    lastRecipe={...r,dish,country};
+    renderRecipe(r);
+    loadVideos(r.ytQuery||`${dish} ${country} recipe`);
+    const key=dish+'__'+country;
+    if(!comments[key])comments[key]=sampleComments(dish,country);
+    renderComments(key);
+    document.getElementById('commentSection').style.display='block';
+    document.getElementById('actionRow').style.display='grid';
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){
+    document.getElementById('resultContent').innerHTML='<p style="color:var(--gold);text-align:center;padding:1.5rem">Something went wrong. Please try again.</p>';
+  }
+  btn.disabled=false;
+  document.getElementById('genBtnTxt').textContent=t('genBtn');
+}
+
+function renderRecipe(r){
+  const ing=r.ingredients.map(i=>`<div class="ing-item"><div class="ing-dot"></div>${i}</div>`).join('');
+  const steps=r.steps.map((s,i)=>`<div class="step-row"><div class="step-n">${i+1}</div><div class="step-txt">${s}</div></div>`).join('');
+  document.getElementById('resultContent').innerHTML=`
+    <div class="recipe-name">${r.name}</div>
+    <div class="meta-row">
+      <span class="meta-tag">&#9200; ${r.time}</span>
+      <span class="meta-tag">&#128202; ${r.difficulty}</span>
+      <span class="meta-tag">&#127757; ${r.origin||country}</span>
+    </div>
+    <div class="r-section">
+      <div class="r-label">${t('nut')}</div>
+      <div class="nut-row">
+        <div class="nut-card"><span class="nut-val">${r.calories}</span><span class="nut-key">Calories</span></div>
+        <div class="nut-card"><span class="nut-val">${r.protein}g</span><span class="nut-key">Protein</span></div>
+        <div class="nut-card"><span class="nut-val">${r.carbs}g</span><span class="nut-key">Carbs</span></div>
+        <div class="nut-card"><span class="nut-val">${r.fat}g</span><span class="nut-key">Fat</span></div>
+      </div>
+    </div>
+    <div class="r-section">
+      <div class="r-label">${t('ing')}</div>
+      <div class="ing-grid">${ing}</div>
+    </div>
+    <div class="r-section">
+      <div class="r-label">${t('steps')}</div>
+      <div class="steps-list">${steps}</div>
+    </div>
+    <div class="chef-tip">&#10022; ${r.tip}</div>`;
+}
+
+function loadVideos(query){
+  const vs=document.getElementById('videoSection');
+  const vg=document.getElementById('videoGrid');
+  vs.style.display='block';
+  const vl=document.getElementById('videoLabel');
+  vl.innerHTML=t('videos')+'<span style="flex:1;height:1px;background:var(--border);display:inline-block;margin-left:8px;vertical-align:middle"></span>';
+  vg.innerHTML='<div style="color:var(--text3);font-size:0.8rem;padding:1rem;grid-column:1/-1">Loading videos...</div>';
+  const enc=encodeURIComponent(query);
+  const vids=[
+    {title:query+' — Full Tutorial',ch:'World Kitchen',dur:'12:45',url:'https://www.youtube.com/results?search_query='+enc},
+    {title:'Authentic '+query+' at Home',ch:'Global Recipes',dur:'8:30',url:'https://www.youtube.com/results?search_query=authentic+'+enc},
+    {title:'Quick '+query+' Under 30 min',ch:'Easy Cook',dur:'6:15',url:'https://www.youtube.com/results?search_query=quick+'+enc},
+    {title:'Secret Recipe: '+query,ch:'Master Chef',dur:'18:20',url:'https://www.youtube.com/results?search_query=secret+'+enc}
+  ];
+  setTimeout(()=>{
+    vg.innerHTML=vids.map(v=>`
+      <a class="video-card" href="${v.url}" target="_blank" rel="noopener">
+        <div class="video-thumb">
+          <div class="play-btn">&#9654;</div>
+          <span class="vid-duration">${v.dur}</span>
+        </div>
+        <div class="video-info">
+          <div class="video-title">${v.title}</div>
+          <div class="video-channel"><span class="yt-dot"></span>${v.ch}</div>
+        </div>
+      </a>`).join('');
+  },700);
+}
+
+function sampleComments(dish,cntry){
+  return[
+    {id:1,name:'Ali Hassan',cntry:'Pakistan',text:`Made this ${dish} yesterday — absolutely perfect result! The flavors were spot on.`,rating:5,likes:14,liked:false,time:'2 hours ago',replies:[{name:'Sara K.',text:'Totally agree! I added extra cardamom and it was amazing.',time:'1 hour ago'}]},
+    {id:2,name:'Priya Sharma',cntry:'India',text:`Wonderful recipe. Reminds me of home cooking. Will definitely try again!`,rating:4,likes:9,liked:false,time:'5 hours ago',replies:[]},
+    {id:3,name:'Marco Rossi',cntry:'Italy',text:`Tried this ${cntry} classic — incredible flavors I had never experienced before!`,rating:5,likes:6,liked:false,time:'Yesterday',replies:[]}
+  ];
+}
+
+function renderComments(key){
+  const el=document.getElementById('commentsList');
+  const cmts=comments[key]||[];
+  if(!cmts.length){el.innerHTML='<div class="empty-msg">Be the first to comment!</div>';return;}
+  el.innerHTML='<div class="comments-list">'+cmts.map(c=>renderCmt(c,key)).join('')+'</div>';
+}
+
+function renderCmt(c,key){
+  const filled='&#9733;'.repeat(c.rating)+'&#9734;'.repeat(5-c.rating);
+  const reps=c.replies&&c.replies.length?`<div class="replies">${c.replies.map(r=>`<div class="reply-item"><div class="reply-avatar">${r.name.substring(0,2).toUpperCase()}</div><div><div class="reply-author">${r.name}<span class="reply-time">${r.time}</span></div><div class="reply-text">${r.text}</div></div></div>`).join('')}</div>`:'';
+  return`<div class="comment-item" id="cmt-${c.id}">
+    <div class="cmt-header">
+      <div class="cmt-left">
+        <div class="avatar">${c.name.substring(0,2).toUpperCase()}</div>
+        <div><div class="cmt-author">${c.name}</div><div class="cmt-meta">${c.cntry} &middot; ${c.time}</div></div>
+      </div>
+      <div class="cmt-stars">${filled}</div>
+    </div>
+    <div class="cmt-text">${c.text}</div>
+    <div class="cmt-actions">
+      <button class="cmt-btn ${c.liked?'liked':''}" onclick="toggleLike(${c.id},'${key}')">&#9825; <span id="lk-${c.id}">${c.likes}</span></button>
+      <button class="cmt-btn" onclick="toggleReply(${c.id})">&#8617; Reply</button>
+    </div>
+    <div id="rb-${c.id}" class="reply-box">
+      <div class="reply-row">
+        <input class="reply-input" id="ri-${c.id}" placeholder="Write a reply..."/>
+        <button class="reply-send" onclick="sendReply(${c.id},'${key}')">Send</button>
+      </div>
+    </div>
+    ${reps}
+  </div>`;
+}
+
+function toggleLike(id,key){
+  const c=comments[key].find(x=>x.id===id);
+  if(!c)return;
+  c.liked=!c.liked;c.likes+=c.liked?1:-1;
+  const el=document.getElementById('lk-'+id);
+  if(el)el.textContent=c.likes;
+  const btn=el&&el.closest('.cmt-btn');
+  if(btn)btn.classList.toggle('liked',c.liked);
+}
+
+function toggleReply(id){
+  const rb=document.getElementById('rb-'+id);
+  if(rb)rb.style.display=rb.style.display==='block'?'none':'block';
+}
+
+function sendReply(id,key){
+  const inp=document.getElementById('ri-'+id);
+  const txt=inp&&inp.value.trim();
+  if(!txt)return;
+  const c=comments[key].find(x=>x.id===id);
+  if(!c)return;
+  c.replies=c.replies||[];
+  c.replies.push({name:'You',text:txt,time:'just now'});
+  inp.value='';
+  renderComments(key);
+}
+
+function submitComment(){
+  const name=document.getElementById('cmtName').value.trim()||'Anonymous';
+  const cntry=document.getElementById('cmtCountry').value.trim()||'Unknown';
+  const text=document.getElementById('cmtText').value.trim();
+  if(!text){document.getElementById('cmtText').focus();return;}
+  if(!lastRecipe)return;
+  const key=lastRecipe.dish+'__'+lastRecipe.country;
+  if(!comments[key])comments[key]=[];
+  comments[key].unshift({id:Date.now(),name,cntry,text,rating:userRating||5,likes:0,liked:false,time:'just now',replies:[]});
+  document.getElementById('cmtText').value='';
+  document.getElementById('cmtName').value='';
+  document.getElementById('cmtCountry').value='';
+  userRating=0;
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+  renderComments(key);
+  showToast('Comment posted!');
+}
+
+function saveRecipe(){
+  if(!lastRecipe)return;
+  if(!favorites.find(f=>f.dish===lastRecipe.dish&&f.country===lastRecipe.country)){
+    favorites.push({...lastRecipe});
+    renderFavorites();
+  }
+  document.getElementById('saveBtn').classList.add('saved');
+  showToast('Recipe saved!');
+}
+
+function shareRecipe(){
+  if(navigator.share&&lastRecipe){navigator.share({title:lastRecipe.name,text:'Check out this recipe on Savoria AI!',url:window.location.href}).catch(()=>{});}
+  else{navigator.clipboard&&navigator.clipboard.writeText(window.location.href).then(()=>showToast('Link copied!'));}
+}
+
+function renderFavorites(){
+  const el=document.getElementById('favList');
+  if(!el)return;
+  if(!favorites.length){el.innerHTML=`<div class="empty-msg">${t('noFav')}</div>`;return;}
+  el.innerHTML=favorites.map((f,i)=>`
+    <div class="fav-item">
+      <div><div class="fav-name">${f.name||f.dish}</div><div class="fav-sub">${f.country} &middot; ${f.time||''}</div></div>
+      <button class="fav-open" onclick="loadFav(${i})">Open &rarr;</button>
+    </div>`).join('');
+}
+
+function loadFav(i){
+  const r=favorites[i];
+  lastRecipe=r;
+  document.getElementById('dishInput').value=r.dish||r.name;
+  switchTab('generator',document.getElementById('tab-generator'));
+  document.getElementById('resultPanel').classList.add('show');
+  renderRecipe(r);
+  document.getElementById('actionRow').style.display='grid';
+  loadVideos(`${r.dish||r.name} ${r.country} recipe`);
+  const key=(r.dish||r.name)+'__'+r.country;
+  if(!comments[key])comments[key]=sampleComments(r.dish||r.name,r.country);
+  renderComments(key);
+  document.getElementById('commentSection').style.display='block';
+}
+
+function quickGen(dish,cntry){
+  country=cntry;
+  document.querySelectorAll('.ctry-pill').forEach(p=>{
+    if(p.textContent.includes(cntry))p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  document.getElementById('dishInput').value=dish;
+  switchTab('generator',document.getElementById('tab-generator'));
+  generateRecipe();
+}
+
+applyLang();
+</script>
+</body>
+</html>
